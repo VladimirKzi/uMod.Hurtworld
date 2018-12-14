@@ -1,4 +1,4 @@
-using Oxide.Core;
+﻿using Oxide.Core;
 using Oxide.Core.Libraries;
 using Oxide.Core.Libraries.Covalence;
 using Oxide.Core.Plugins;
@@ -9,8 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using UnityEngine;
-using NetworkPlayer = uLink.NetworkPlayer;
 
 namespace Oxide.Game.Hurtworld
 {
@@ -290,47 +288,6 @@ namespace Oxide.Game.Hurtworld
 
             player.Reply(string.Format(lang.GetMessage("PermissionsNotLoaded", this, player.Id), permission.LastException.Message));
             return false;
-        }
-
-        /// <summary>
-        /// Gets the player session using a name, Steam ID, or IP address
-        /// </summary>
-        /// <param name="nameOrIdOrIp"></param>
-        /// <returns></returns>
-        public PlayerSession FindSession(string nameOrIdOrIp)
-        {
-            Dictionary<NetworkPlayer, PlayerSession> sessions = GameManager.Instance.GetSessions();
-            PlayerSession session = null;
-            foreach (KeyValuePair<NetworkPlayer, PlayerSession> i in sessions)
-            {
-                if (!nameOrIdOrIp.Equals(i.Value.Identity.Name, StringComparison.OrdinalIgnoreCase) &&
-                    !nameOrIdOrIp.Equals(i.Value.SteamId.ToString()) && !nameOrIdOrIp.Equals(i.Key.ipAddress))
-                {
-                    continue;
-                }
-
-                session = i.Value;
-                break;
-            }
-            return session;
-        }
-
-        /// <summary>
-        /// Gets the player session using a uLink.NetworkPlayer
-        /// </summary>
-        /// <param name="player"></param>
-        /// <returns></returns>
-        public PlayerSession FindSessionByNetPlayer(uLink.NetworkPlayer player) => GameManager.Instance.GetSession(player);
-
-        /// <summary>
-        /// Gets the player session using a UnityEngine.GameObject
-        /// </summary>
-        /// <param name="go"></param>
-        /// <returns></returns>
-        public PlayerSession FindSessionByGo(GameObject go)
-        {
-            Dictionary<NetworkPlayer, PlayerSession> sessions = GameManager.Instance.GetSessions();
-            return (from i in sessions where go.Equals(i.Value.WorldPlayerEntity) select i.Value).FirstOrDefault();
         }
 
         #endregion Helpers
