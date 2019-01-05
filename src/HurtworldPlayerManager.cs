@@ -1,13 +1,12 @@
 ﻿extern alias References;
 
-using Oxide.Core;
-using Oxide.Core.Libraries.Covalence;
 using References::ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using uMod.Libraries.Universal;
 
-namespace Oxide.Game.Hurtworld.Libraries.Covalence
+namespace uMod.Hurtworld
 {
     /// <summary>
     /// Represents a generic player manager
@@ -24,11 +23,12 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         private IDictionary<string, PlayerRecord> playerData;
         private IDictionary<string, HurtworldPlayer> allPlayers;
         private IDictionary<string, HurtworldPlayer> connectedPlayers;
+        private const string dataFileName = "umod";
 
         internal void Initialize()
         {
-            Utility.DatafileToProto<Dictionary<string, PlayerRecord>>("oxide.covalence");
-            playerData = ProtoStorage.Load<Dictionary<string, PlayerRecord>>("oxide.covalence") ?? new Dictionary<string, PlayerRecord>();
+            // TODO: Migrate/move from oxide.covalence.data to umod.data if SQLite is not used, else migrate to umod.db with SQLite
+            playerData = ProtoStorage.Load<Dictionary<string, PlayerRecord>>(dataFileName) ?? new Dictionary<string, PlayerRecord>();
             allPlayers = new Dictionary<string, HurtworldPlayer>();
             connectedPlayers = new Dictionary<string, HurtworldPlayer>();
 
@@ -67,7 +67,7 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
 
         internal void PlayerDisconnected(PlayerSession session) => connectedPlayers.Remove(session.SteamId.ToString());
 
-        internal void SavePlayerData() => ProtoStorage.Save(playerData, "oxide.covalence");
+        internal void SavePlayerData() => ProtoStorage.Save(playerData, dataFileName);
 
         #region Player Finding
 
@@ -87,7 +87,13 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// Gets all sleeping players
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<IPlayer> Sleeping => null; // TODO: Implement if/when possible
+        public IEnumerable<IPlayer> Sleeping
+        {
+            get
+            {
+                return allPlayers.Values.Cast<IPlayer>().Where(p => (p.Object as PlayerSession)?.Identity.Sleeper != null);
+            }
+        }
 
         /// <summary>
         /// Finds a single player given unique ID

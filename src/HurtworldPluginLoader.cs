@@ -1,13 +1,13 @@
-﻿using Oxide.Core.Plugins;
-using System;
+﻿using System;
+using uMod.Plugins;
 
-namespace Oxide.Game.Hurtworld
+namespace uMod.Hurtworld
 {
     /// <summary>
-    /// Responsible for loading Hurtworld core plugins
+    /// Responsible for loading core Hurtworld plugins
     /// </summary>
     public class HurtworldPluginLoader : PluginLoader
     {
-        public override Type[] CorePlugins => new[] { typeof(HurtworldCore) };
+        public override Type[] CorePlugins => new[] { typeof(Hurtworld) };
     }
 }

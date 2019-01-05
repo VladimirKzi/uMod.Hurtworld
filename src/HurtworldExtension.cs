@@ -1,15 +1,14 @@
-using Oxide.Core;
-using Oxide.Core.Extensions;
-using Oxide.Core.RemoteConsole;
-using Oxide.Plugins;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using uLink;
+using uMod.Extensions;
+using uMod.Plugins;
+using uMod.Unity;
 using UnityEngine;
-using NetworkPlayer = uLink.NetworkPlayer;
 
-namespace Oxide.Game.Hurtworld
+namespace uMod.Hurtworld
 {
     /// <summary>
     /// The extension class that represents this extension
@@ -50,6 +49,12 @@ namespace Oxide.Game.Hurtworld
         public override string Branch => "public";
 #endif
 
+        // Commands that a plugin can't override
+        internal static IEnumerable<string> RestrictedCommands => new[]
+        {
+            "bindip", "host", "queryport"
+        };
+
         /// <summary>
         /// Default game-specific references for use in plugins
         /// </summary>
@@ -63,7 +68,7 @@ namespace Oxide.Game.Hurtworld
         /// </summary>
         public override string[] WhitelistAssemblies => new[]
         {
-            "Assembly-CSharp", "mscorlib", "Oxide.Core", "System", "System.Core", "UnityEngine", "uLink"
+            "Assembly-CSharp", "mscorlib", "uMod", "System", "System.Core", "UnityEngine", "uLink"
         };
 
         public override string[] WhitelistNamespaces => new[]
@@ -120,11 +125,6 @@ namespace Oxide.Game.Hurtworld
         /// </summary>
         public override void Load()
         {
-            Manager.RegisterLibrary("Hurt", new Libraries.Hurtworld());
-            Manager.RegisterLibrary("Command", new Libraries.Command());
-            Manager.RegisterLibrary("Item", new Libraries.Item());
-            Manager.RegisterLibrary("Player", new Libraries.Player());
-            Manager.RegisterLibrary("Server", new Libraries.Server());
             Manager.RegisterPluginLoader(new HurtworldPluginLoader());
         }
 
@@ -141,68 +141,60 @@ namespace Oxide.Game.Hurtworld
         /// </summary>
         public override void OnModLoad()
         {
+            Application.logMessageReceivedThreaded += HandleLog;
             CSharpPluginLoader.PluginReferences.UnionWith(DefaultReferences);
-
-            Application.logMessageReceived += HandleLog;
-
-            if (Interface.Oxide.EnableConsole())
-            {
-                Interface.Oxide.ServerConsole.Input += ServerConsoleOnInput;
-            }
         }
 
         internal static void ServerConsole()
         {
-            if (Interface.Oxide.ServerConsole == null || GameManager.Instance.GameState != EGameState.Hosting)
+            if (Interface.Oxide.ServerConsole != null && GameManager.Instance.GameState == EGameState.Hosting)
             {
-                return;
-            }
+                Interface.Oxide.ServerConsole.Title = () => $"{GameManager.Instance.GetPlayerCount()} | {GameManager.Instance.ServerConfig.GameName}";
 
-            Interface.Oxide.ServerConsole.Title = () => $"{GameManager.Instance.GetPlayerCount()} | {GameManager.Instance.ServerConfig.GameName}";
-
-            Interface.Oxide.ServerConsole.Status1Left = () => GameManager.Instance.ServerConfig.GameName;
-            Interface.Oxide.ServerConsole.Status1Right = () =>
-            {
-                TimeSpan time = TimeSpan.FromSeconds(Time.realtimeSinceStartup);
-                string uptime = $"{time.TotalHours:00}h{time.Minutes:00}m{time.Seconds:00}s".TrimStart(' ', 'd', 'h', 'm', 's', '0');
-                return $"{Mathf.RoundToInt(1f / Time.smoothDeltaTime)}fps, {uptime}";
-            };
-
-            Interface.Oxide.ServerConsole.Status2Left = () => $"{GameManager.Instance.GetPlayerCount()}/{GameManager.Instance.ServerConfig.MaxPlayers} players";
-            Interface.Oxide.ServerConsole.Status2Right = () =>
-            {
-                if (NetworkTime.serverTime <= 0)
+                Interface.Oxide.ServerConsole.Status1Left = () => GameManager.Instance.ServerConfig.GameName;
+                Interface.Oxide.ServerConsole.Status1Right = () =>
                 {
-                    return "not connected";
-                }
+                    TimeSpan time = TimeSpan.FromSeconds(Time.realtimeSinceStartup);
+                    string uptime = $"{time.TotalHours:00}h{time.Minutes:00}m{time.Seconds:00}s".TrimStart(' ', 'd', 'h', 'm', 's', '0');
+                    return $"{Mathf.RoundToInt(1f / Time.smoothDeltaTime)}fps, {uptime}";
+                };
 
-                double bytesReceived = 0;
-                double bytesSent = 0;
-                foreach (NetworkPlayer connection in uLink.Network.connections)
+                Interface.Oxide.ServerConsole.Status2Left = () => $"{GameManager.Instance.GetPlayerCount()}/{GameManager.Instance.ServerConfig.MaxPlayers} players";
+                Interface.Oxide.ServerConsole.Status2Right = () =>
                 {
-                    NetworkStatistics stats = connection.statistics;
-                    if (stats != null)
+                    if (!(NetworkTime.serverTime <= 0))
                     {
-                        bytesReceived += stats.bytesReceivedPerSecond;
-                        bytesSent += stats.bytesSentPerSecond;
+                        double bytesReceived = 0;
+                        double bytesSent = 0;
+                        foreach (uLink.NetworkPlayer connection in uLink.Network.connections)
+                        {
+                            NetworkStatistics stats = connection.statistics;
+                            if (stats != null)
+                            {
+                                bytesReceived += stats.bytesReceivedPerSecond;
+                                bytesSent += stats.bytesSentPerSecond;
+                            }
+                        }
+                        return $"{Utility.FormatBytes(bytesReceived)}/s in, {Utility.FormatBytes(bytesSent)}/s out";
                     }
-                }
-                return $"{Utility.FormatBytes(bytesReceived)}/s in, {Utility.FormatBytes(bytesSent)}/s out";
-            };
 
-            Interface.Oxide.ServerConsole.Status3Left = () =>
-            {
-                if (TimeManager.Instance != null && GameManager.Instance != null)
+                    return "not connected";
+                };
+
+                Interface.Oxide.ServerConsole.Status3Left = () =>
                 {
-                    GameTime time = TimeManager.Instance.GetCurrentGameTime();
-                    string gameTime = Convert.ToDateTime($"{time.Hour}:{time.Minute}:{Math.Floor(time.Second)}").ToString("h:mm tt");
-                    return $"{gameTime.ToLower()}, {GameManager.Instance.ServerConfig?.Map ?? "Unknown"}";
-                }
+                    if (TimeManager.Instance != null && GameManager.Instance != null)
+                    {
+                        GameTime time = TimeManager.Instance.GetCurrentGameTime();
+                        string gameTime = Convert.ToDateTime($"{time.Hour}:{time.Minute}:{Math.Floor(time.Second)}").ToString("h:mm tt");
+                        return $"{gameTime.ToLower()}, {GameManager.Instance.ServerConfig?.Map ?? "Unknown"}";
+                    }
 
-                return string.Empty;
-            };
-            Interface.Oxide.ServerConsole.Status3Right = () => $"Oxide.Hurtworld {AssemblyVersion}";
-            Interface.Oxide.ServerConsole.Status3RightColor = ConsoleColor.Yellow;
+                    return string.Empty;
+                };
+                Interface.Oxide.ServerConsole.Status3Right = () => $"uMod.Hurtworld {AssemblyVersion}";
+                Interface.Oxide.ServerConsole.Status3RightColor = ConsoleColor.Yellow;
+            }
         }
 
         internal static void ServerConsoleOnInput(string input)
@@ -214,37 +206,11 @@ namespace Oxide.Game.Hurtworld
             }
         }
 
-        internal static void HandleLog(string message, string stackTrace, LogType type)
+        internal static void HandleLog(string message, string stackTrace, LogType logType)
         {
             if (!string.IsNullOrEmpty(message) && !Filter.Any(message.StartsWith))
             {
-                ConsoleColor color = ConsoleColor.Gray;
-                string remoteType = "generic";
-
-                if (type == LogType.Warning)
-                {
-                    color = ConsoleColor.Yellow;
-                    remoteType = "warning";
-                }
-                else if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
-                {
-                    color = ConsoleColor.Red;
-                    remoteType = "error";
-                }
-
-                if (message.ToLower().StartsWith("[chat]"))
-                {
-                    remoteType = "chat";
-                }
-
-                Interface.Oxide.ServerConsole.AddMessage(message, color);
-                Interface.Oxide.RemoteConsole.SendMessage(new RemoteMessage
-                {
-                    Message = message,
-                    Identifier = 0,
-                    Type = remoteType,
-                    Stacktrace = stackTrace
-                });
+                Interface.uMod.RootLogger.HandleMessage(message, stackTrace, logType.ToLogType());
             }
         }
     }

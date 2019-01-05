@@ -1,9 +1,9 @@
-﻿using Oxide.Core;
-using Oxide.Core.Libraries.Covalence;
-using System;
+﻿using System;
 using System.Globalization;
+using System.Linq;
+using uMod.Libraries.Universal;
 
-namespace Oxide.Game.Hurtworld.Libraries.Covalence
+namespace uMod.Hurtworld
 {
     /// <summary>
     /// Represents a connected player
@@ -201,16 +201,16 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// <param name="args"></param>
         public void Message(string message, string prefix, params object[] args)
         {
-            message = args.Length > 0 ? string.Format(Formatter.ToPlaintext(message), args) : Formatter.ToPlaintext(message);
+            ulong avatarId = args.Length > 0 && args[0].IsSteamId() ? (ulong)args[0] : 0ul;
+            message = args.Length > 0 ? string.Format(Formatter.ToPlaintext(message), avatarId != 0ul ? args.Skip(1) : args) : Formatter.ToPlaintext(message);
             string formatted = prefix != null ? $"{prefix} {message}" : message;
-            Interface.Oxide.LogInfo(formatted);
+            Interface.uMod.LogInfo(formatted);
         }
 
         /// <summary>
         /// Sends the specified message to the player
         /// </summary>
         /// <param name="message"></param>
-        /// <param name="args"></param>
         public void Message(string message) => Message(message, null);
 
         /// <summary>
@@ -219,13 +219,15 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// <param name="message"></param>
         /// <param name="prefix"></param>
         /// <param name="args"></param>
-        public void Reply(string message, string prefix, params object[] args) => Message(message, prefix, args);
+        public void Reply(string message, string prefix, params object[] args)
+        {
+            Message(message, prefix, args);
+        }
 
         /// <summary>
         /// Replies to the player with the specified message
         /// </summary>
         /// <param name="message"></param>
-        /// <param name="args"></param>
         public void Reply(string message) => Message(message, null);
 
         /// <summary>

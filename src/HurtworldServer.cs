@@ -1,10 +1,11 @@
-﻿using Oxide.Core;
-using Oxide.Core.Libraries.Covalence;
-using System;
+﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Net;
+using uMod.Libraries.Universal;
+using uMod.Logging;
 
-namespace Oxide.Game.Hurtworld.Libraries.Covalence
+namespace uMod.Hurtworld
 {
     /// <summary>
     /// Represents the server hosting the game instance
@@ -13,8 +14,9 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
     {
         #region Initialization
 
-        internal readonly Server Server = new Server();
         internal static readonly BanManager BanManager = BanManager.Instance;
+        internal static readonly ChatManagerServer ChatManager = ChatManagerServer.Instance;
+        internal static readonly ConsoleManager ConsoleManager = ConsoleManager.Instance;
 
         #endregion Initialization
 
@@ -47,19 +49,19 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
                         if (Utility.ValidateIPv4(GameManager.Instance.ServerConfig.BoundIP) && !Utility.IsLocalIP(GameManager.Instance.ServerConfig.BoundIP))
                         {
                             IPAddress.TryParse(GameManager.Instance.ServerConfig.BoundIP, out address);
-                            Interface.Oxide.LogInfo($"IP address from command-line: {address}");
+                            Interface.uMod.LogInfo($"IP address from command-line: {address}");
                         }
                         else if ((ip = Steamworks.SteamGameServer.GetPublicIP()) > 0)
                         {
                             string publicIp = string.Concat(ip >> 24 & 255, ".", ip >> 16 & 255, ".", ip >> 8 & 255, ".", ip & 255); // TODO: uint IP address utility method
                             IPAddress.TryParse(publicIp, out address);
-                            Interface.Oxide.LogInfo($"IP address from Steam query: {address}");
+                            Interface.uMod.LogInfo($"IP address from Steam query: {address}");
                         }
                         else
                         {
                             WebClient webClient = new WebClient();
                             IPAddress.TryParse(webClient.DownloadString("http://api.ipify.org"), out address);
-                            Interface.Oxide.LogInfo($"IP address from external API: {address}");
+                            Interface.uMod.LogInfo($"IP address from external API: {address}");
                         }
                     }
 
@@ -164,7 +166,9 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         {
             if (!IsBanned(id))
             {
-                Server.Ban(id, reason, duration);
+                BanManager.AddBan(Convert.ToUInt64(id));
+
+                // TODO: Implement universal ban storage
             }
         }
 
@@ -178,7 +182,7 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// Gets if the player is banned
         /// </summary>
         /// <param name="id"></param>
-        public bool IsBanned(string id) => Server.IsBanned(id);
+        public bool IsBanned(string id) => BanManager.IsBanned(Convert.ToUInt64(id));
 
         /// <summary>
         /// Saves the server and any related information
@@ -193,7 +197,9 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         {
             if (IsBanned(id))
             {
-                Server.Unban(id);
+                BanManager.RemoveBan(Convert.ToUInt64(id));
+
+                // TODO: Implement universal ban storage
             }
         }
 
@@ -207,7 +213,21 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// <param name="message"></param>
         /// <param name="prefix"></param>
         /// <param name="args"></param>
-        public void Broadcast(string message, string prefix, params object[] args) => Server.Broadcast(message, prefix, args);
+        public void Broadcast(string message, string prefix, params object[] args)
+        {
+            if (!string.IsNullOrEmpty(message))
+            {
+                ulong avatarId = args.Length > 0 && args[0].IsSteamId() ? (ulong)args[0] : 0ul;
+                message = args.Length > 0 ? string.Format(Formatter.ToUnity(message), avatarId != 0ul ? args.Skip(1) : args) : Formatter.ToUnity(message);
+                string formatted = prefix != null ? $"{prefix}: {message}" : message;
+#if ITEMV2
+                ChatManager.SendChatMessage(new ServerChatMessage(formatted));
+#else
+                ChatManager.RPC("RelayChat", uLink.RPCMode.Others, formatted);
+#endif
+                ConsoleManager.SendLog($"[Chat] {message}");
+            }
+        }
 
         /// <summary>
         /// Broadcasts the specified chat message to all players
@@ -220,7 +240,13 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// </summary>
         /// <param name="command"></param>
         /// <param name="args"></param>
-        public void Command(string command, params object[] args) => Server.Command(command, args);
+        public void Command(string command, params object[] args)
+        {
+            if (!string.IsNullOrEmpty(command))
+            {
+                ConsoleManager.ExecuteCommand($"{command} {string.Join(" ", Array.ConvertAll(args, x => x.ToString()))}");
+            }
+        }
 
         #endregion Chat and Commands
     }

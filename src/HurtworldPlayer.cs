@@ -1,12 +1,11 @@
-﻿using Oxide.Core;
-using Oxide.Core.Libraries;
-using Oxide.Core.Libraries.Covalence;
-using Steamworks;
+﻿using Steamworks;
 using System;
 using System.Globalization;
+using uMod.Libraries;
+using uMod.Libraries.Universal;
 using UnityEngine;
 
-namespace Oxide.Game.Hurtworld.Libraries.Covalence
+namespace uMod.Hurtworld
 {
     /// <summary>
     /// Represents a player, either connected or not
@@ -15,9 +14,8 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
     {
         #region Initialization
 
-        internal readonly Player Player = new Player();
-
         private static Permission libPerms;
+
         private readonly PlayerSession session;
         private readonly CSteamID cSteamId;
         private readonly ulong steamId;
@@ -26,7 +24,7 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         {
             if (libPerms == null)
             {
-                libPerms = Interface.Oxide.GetLibrary<Permission>();
+                libPerms = Interface.uMod.GetLibrary<Permission>();
             }
 
             steamId = id;
@@ -71,37 +69,47 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// <summary>
         /// Gets the player's language
         /// </summary>
-        public CultureInfo Language => Player.Language(session);
+        public CultureInfo Language
+        {
+            get
+            {
+#if ITEMV2
+                return CultureInfo.GetCultureInfo(session.WorldPlayerEntity.PlayerOptions.CurrentConfig.CurrentLanguage);
+#else
+                return CultureInfo.GetCultureInfo("en");
+#endif
+            }
+        }
 
         /// <summary>
         /// Gets the player's IP address
         /// </summary>
-        public string Address => Player.Address(session);
+        public string Address => session.Player.ipAddress;
 
         /// <summary>
         /// Gets the player's average network ping
         /// </summary>
-        public int Ping => Player.Ping(session);
+        public int Ping => session.Player.averagePing;
 
         /// <summary>
         /// Returns if the player is admin
         /// </summary>
-        public bool IsAdmin => Player.IsAdmin(steamId);
+        public bool IsAdmin => GameManager.Instance.IsAdmin(cSteamId);
 
         /// <summary>
         /// Gets if the player is banned
         /// </summary>
-        public bool IsBanned => Player.IsBanned(steamId);
+        public bool IsBanned => GameManager.Instance.IsAdmin(cSteamId);
 
         /// <summary>
         /// Gets if the player is connected
         /// </summary>
-        public bool IsConnected => Player.IsConnected(session);
+        public bool IsConnected => session?.Player.isConnected ?? false;
 
         /// <summary>
         /// Returns if the player is sleeping
         /// </summary>
-        public bool IsSleeping => Player.IsSleeping(session);
+        public bool IsSleeping => session.Identity.Sleeper != null;
 
         /// <summary>
         /// Returns if the player is the server
@@ -117,7 +125,17 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// </summary>
         /// <param name="reason"></param>
         /// <param name="duration"></param>
-        public void Ban(string reason, TimeSpan duration = default(TimeSpan)) => Player.Ban(session, reason);
+        public void Ban(string reason, TimeSpan duration = default(TimeSpan))
+        {
+            if (!IsBanned)
+            {
+                BanManager.Instance.AddBan(session.SteamId.m_SteamID);
+                if (session.Player.isConnected)
+                {
+                    Kick(reason);
+                }
+            }
+        }
 
         /// <summary>
         /// Gets the amount of time remaining on the player's ban
@@ -128,7 +146,16 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// Heals the player's character by specified amount
         /// </summary>
         /// <param name="amount"></param>
-        public void Heal(float amount) => Player.Heal(session, amount);
+        public void Heal(float amount)
+        {
+#if ITEMV2
+            EntityEffectFluid effect = new EntityEffectFluid(EntityFluidEffectKeyDatabase.Instance.Health, EEntityEffectFluidModifierType.AddValuePure, amount);
+#else
+            EntityEffectFluid effect = new EntityEffectFluid(EEntityFluidEffectType.Health, EEntityEffectFluidModifierType.AddValuePure, amount);
+#endif
+            EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
+            effect.Apply(stats);
+        }
 
         /// <summary>
         /// Gets/sets the player's health
@@ -160,18 +187,39 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// Damages the player's character by specified amount
         /// </summary>
         /// <param name="amount"></param>
-        public void Hurt(float amount) => Player.Hurt(session, amount);
+        public void Hurt(float amount)
+        {
+#if ITEMV2
+            EntityEffectFluid effect = new EntityEffectFluid(EntityFluidEffectKeyDatabase.Instance.Damage, EEntityEffectFluidModifierType.AddValuePure, -amount);
+#else
+            EntityEffectFluid effect = new EntityEffectFluid(EEntityFluidEffectType.Damage, EEntityEffectFluidModifierType.AddValuePure, -amount);
+#endif
+            EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
+            effect.Apply(stats);
+        }
 
         /// <summary>
         /// Kicks the player from the game
         /// </summary>
         /// <param name="reason"></param>
-        public void Kick(string reason) => Player.Kick(session, reason);
+        public void Kick(string reason)
+        {
+            GameManager.Instance.KickPlayer(session, reason);
+        }
 
         /// <summary>
         /// Causes the player's character to die
         /// </summary>
-        public void Kill() => Player.Kill(session);
+        public void Kill()
+        {
+            EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
+            EntityEffectSourceData entityEffectSourceDatum = new EntityEffectSourceData { SourceDescriptionKey = "EntityStats/Sources/Suicide" };
+#if ITEMV2
+            stats.HandleEvent(new EntityEventDataRaiseEvent { EventType = EEntityEventType.Die }, entityEffectSourceDatum);
+#else
+            stats.HandleEvent(new EntityEventData { EventType = EEntityEventType.Die }, entityEffectSourceDatum);
+#endif
+        }
 
         /// <summary>
         /// Gets/sets the player's maximum health
@@ -192,7 +240,10 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
                 EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
 #if ITEMV2
                 StandardEntityFluidEffect effect = stats.GetFluidEffect(EntityFluidEffectKeyDatabase.Instance.Health) as StandardEntityFluidEffect;
-                if (effect != null) effect.MaxValue = value;
+                if (effect != null)
+                {
+                    effect.MaxValue = value;
+                }
 #else
                 StandardEntityFluidEffect effect = stats.GetFluidEffect(EEntityFluidEffectType.Health) as StandardEntityFluidEffect;
                 effect?.MaxValue(value);
@@ -204,7 +255,30 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// Renames the player to specified name
         /// <param name="name"></param>
         /// </summary>
-        public void Rename(string name) => Player.Rename(session, name);
+        public void Rename(string name)
+        {
+            //name = name.Substring(0, 32);
+            name = ChatManagerServer.CleanupGeneral(name);
+            if (string.IsNullOrEmpty(name.Trim()))
+            {
+                name = "Unnamed";
+            }
+
+            // Chat/display name
+#if !ITEMV2
+            session.Name = name;
+#endif
+            session.Identity.Name = name;
+            session.WorldPlayerEntity.GetComponent<HurtMonoBehavior>().RPC("UpdateName", uLink.RPCMode.All, name);
+            SteamGameServer.BUpdateUserData(session.SteamId, name, 0);
+
+            // Overhead name // TODO: Implement when possible
+            //var displayProxyName = session.WorldPlayerEntity.GetComponent<DisplayProxyName>();
+            //displayProxyName.UpdateName(name);
+
+            session.IPlayer.Name = name;
+            libPerms.UpdateNickname(session.Identity.SteamId.ToString(), name);
+        }
 
         /// <summary>
         /// Teleports the player's character to the specified position
@@ -212,7 +286,10 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="z"></param>
-        public void Teleport(float x, float y, float z) => Player.Teleport(session, x, y, z);
+        public void Teleport(float x, float y, float z)
+        {
+            session.WorldPlayerEntity.transform.position = new Vector3(x, y, z);
+        }
 
         /// <summary>
         /// Teleports the player's character to the specified generic position
@@ -223,7 +300,13 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// <summary>
         /// Unbans the player
         /// </summary>
-        public void Unban() => Player.Unban(session);
+        public void Unban()
+        {
+            if (IsBanned)
+            {
+                BanManager.Instance.RemoveBan(session.SteamId.m_SteamID);
+            }
+        }
 
         #endregion Administration
 
@@ -237,7 +320,7 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// <param name="z"></param>
         public void Position(out float x, out float y, out float z)
         {
-            Vector3 pos = Player.Position(session);
+            Vector3 pos = session.WorldPlayerEntity.transform.position;
             x = pos.x;
             y = pos.y;
             z = pos.z;
@@ -249,7 +332,7 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// <returns></returns>
         public GenericPosition Position()
         {
-            Vector3 pos = Player.Position(session);
+            Vector3 pos = session.WorldPlayerEntity.transform.position;
             return new GenericPosition(pos.x, pos.y, pos.z);
         }
 
@@ -263,7 +346,19 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// <param name="message"></param>
         /// <param name="prefix"></param>
         /// <param name="args"></param>
-        public void Message(string message, string prefix, params object[] args) => Player.Message(session, message, prefix, args);
+        public void Message(string message, string prefix, params object[] args)
+        {
+            if (!string.IsNullOrEmpty(message))
+            {
+                message = args.Length > 0 ? string.Format(Formatter.ToUnity(message), args) : Formatter.ToUnity(message);
+                string formatted = prefix != null ? $"{prefix} {message}" : message;
+#if ITEMV2
+                ChatManagerServer.Instance.SendChatMessage(new ServerChatMessage(formatted, false), session.Player);
+#else
+                ChatManagerServer.Instance.RPC("RelayChat", session.Player, formatted);
+#endif
+            }
+        }
 
         /// <summary>
         /// Sends the specified message to the player
@@ -290,7 +385,10 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// </summary>
         /// <param name="command"></param>
         /// <param name="args"></param>
-        public void Command(string command, params object[] args) => Player.Command(session, command, args);
+        public void Command(string command, params object[] args)
+        {
+            // TODO: Implement when possible
+        }
 
         #endregion Chat and Commands
 
@@ -362,7 +460,7 @@ namespace Oxide.Game.Hurtworld.Libraries.Covalence
         /// Returns a human readable string representation of this IPlayer
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => $"Covalence.HurtworldPlayer[{Id}, {Name}]";
+        public override string ToString() => $"HurtworldPlayer[{Id}, {Name}]";
 
         #endregion Operator Overloads
     }

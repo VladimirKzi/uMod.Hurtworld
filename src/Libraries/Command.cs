@@ -1,18 +1,15 @@
-﻿using Oxide.Core;
-using Oxide.Core.Libraries;
-using Oxide.Core.Plugins;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using uMod.Libraries;
+using uMod.Plugins;
 
-namespace Oxide.Game.Hurtworld.Libraries
+namespace uMod.Hurtworld.Libraries
 {
     /// <summary>
     /// A library containing functions for adding console and chat commands
     /// </summary>
     public class Command : Library
     {
-        public override bool IsGlobal => false;
-
         private struct PluginCallback
         {
             public readonly Plugin Plugin;
@@ -88,7 +85,7 @@ namespace Oxide.Game.Hurtworld.Libraries
                 string previousPluginName = cmd.Plugin?.Name ?? "an unknown plugin";
                 string newPluginName = plugin?.Name ?? "An unknown plugin";
                 string msg = $"{newPluginName} has replaced the '{commandName}' chat command previously registered by {previousPluginName}";
-                Interface.Oxide.LogWarning(msg);
+                Interface.uMod.LogWarning(msg);
             }
             cmd = new ChatCommand(commandName, plugin, callbackName);
 
@@ -118,7 +115,7 @@ namespace Oxide.Game.Hurtworld.Libraries
                 string previousPluginName = cmd.Plugin?.Name ?? "an unknown plugin";
                 string newPluginName = plugin?.Name ?? "An unknown plugin";
                 string msg = $"{newPluginName} has replaced the '{commandName}' console command previously registered by {previousPluginName}";
-                Interface.Oxide.LogWarning(msg);
+                Interface.uMod.LogWarning(msg);
             }
             cmd = new ConsoleCommand(commandName, plugin, callbackName);
 
@@ -212,7 +209,7 @@ namespace Oxide.Game.Hurtworld.Libraries
             string fullname = $"{parent}.{name}";
 
             HurtworldCommandSystem.RegisteredCommand cmd;
-            if (HurtworldCore.Covalence.CommandSystem.registeredCommands.TryGetValue(command, out cmd))
+            if (Hurtworld.Universal.CommandSystem.registeredCommands.TryGetValue(command, out cmd))
                 if (cmd.Source.IsCorePlugin)
                     return false;
 
@@ -231,7 +228,7 @@ namespace Oxide.Game.Hurtworld.Libraries
                         return false;
             }
 
-            return !HurtworldCore.RestrictedCommands.Contains(command) && !HurtworldCore.RestrictedCommands.Contains(fullname);
+            return !Hurtworld.RestrictedCommands.Contains(command) && !Hurtworld.RestrictedCommands.Contains(fullname);
         }*/
     }
 }
