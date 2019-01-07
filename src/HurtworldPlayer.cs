@@ -99,7 +99,7 @@ namespace uMod.Hurtworld
         /// <summary>
         /// Gets if the player is banned
         /// </summary>
-        public bool IsBanned => GameManager.Instance.IsAdmin(cSteamId);
+        public bool IsBanned => BanManager.Instance.IsBanned(steamId);
 
         /// <summary>
         /// Gets if the player is connected
