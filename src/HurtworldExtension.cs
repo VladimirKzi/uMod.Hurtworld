@@ -141,11 +141,12 @@ namespace uMod.Hurtworld
         /// </summary>
         public override void OnModLoad()
         {
+            Interface.uMod.EnableConsole();
             Application.logMessageReceivedThreaded += HandleLog;
             CSharpPluginLoader.PluginReferences.UnionWith(DefaultReferences);
         }
 
-        internal static void ServerConsole()
+        internal static void ConsoleStatusBar()
         {
             if (Interface.Oxide.ServerConsole != null && GameManager.Instance.GameState == EGameState.Hosting)
             {

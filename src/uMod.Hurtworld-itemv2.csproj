@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project>
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <PropertyGroup>
@@ -35,7 +35,7 @@
     <PackageReference Include="Oxide.References" Version="2.0.*">
       <PrivateAssets>contentfiles;analyzers;build</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="uMod" Version="3.0.3923-develop" />
+    <PackageReference Include="uMod" Version="3.0.3927-develop" />
     <!--<PackageReference Include="uMod.MySql" Version="3.0.*" />
     <PackageReference Include="uMod.SQLite" Version="3.0.*" />-->
     <PackageReference Include="uMod.Unity" Version="3.0.3765-develop" />

@@ -1780,7 +1780,7 @@
               "ReturnType": "System.Void",
               "Parameters": []
             },
-            "MSILHash": "7SnN9mPxddd7FplHdSax/v5Ai0CUvIsdt5A2BY887m0=",
+            "MSILHash": "MwBuV5bcpwW4GZ/yjAjvxkBTrl0nvpkK06y4AGdFivE=",
             "BaseHookName": "InitMod [internal]",
             "HookCategory": "Server"
           }

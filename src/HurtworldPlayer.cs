@@ -92,9 +92,14 @@ namespace uMod.Hurtworld
         public int Ping => session.Player.averagePing;
 
         /// <summary>
-        /// Returns if the player is admin
+        /// Returns if the player is a server admin
         /// </summary>
         public bool IsAdmin => GameManager.Instance.IsAdmin(cSteamId);
+
+        /// <summary>
+        /// Returns if the player is a server moderator
+        /// </summary>
+        public bool IsModerator => IsAdmin;
 
         /// <summary>
         /// Gets if the player is banned

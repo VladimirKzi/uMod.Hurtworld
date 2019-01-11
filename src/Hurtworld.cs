@@ -128,14 +128,15 @@ namespace uMod.Hurtworld
         {
             if (!serverInitialized)
             {
-                SteamGameServer.SetGameTags("oxide,modded");
-
                 // Let plugins know server startup is complete
                 serverInitialized = true;
                 Interface.CallHook("OnServerInitialized", serverInitialized);
 
                 Interface.uMod.LogInfo($"uMod version {uMod.Version} running on {Universal.GameName} server version {Server.Version}");
                 Analytics.Collect();
+
+                HurtworldExtension.ConsoleStatusBar();
+                SteamGameServer.SetGameTags("oxide,modded");
             }
         }
 
@@ -145,6 +146,7 @@ namespace uMod.Hurtworld
         [HookMethod("OnServerSave")]
         private void OnServerSave()
         {
+            // Trigger save process
             Interface.uMod.OnSave();
 
             // Save groups, users, and other data
@@ -157,6 +159,7 @@ namespace uMod.Hurtworld
         [HookMethod("OnServerShutdown")]
         private void OnServerShutdown()
         {
+            // Trigger shutdown process
             Interface.uMod.OnShutdown();
 
             // Save groups, users, and other data

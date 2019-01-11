@@ -212,7 +212,6 @@ namespace uMod.Hurtworld
                 {
                     permission.AddUserGroup(id, defaultGroups.Players);
                 }
-
                 if (session.IsAdmin && !permission.UserHasGroup(id, defaultGroups.Administrators))
                 {
                     permission.AddUserGroup(id, defaultGroups.Administrators);
