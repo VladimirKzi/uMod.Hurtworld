@@ -148,20 +148,20 @@ namespace uMod.Hurtworld
 
         internal static void ConsoleStatusBar()
         {
-            if (Interface.Oxide.ServerConsole != null && GameManager.Instance.GameState == EGameState.Hosting)
+            if (Interface.uMod.ServerConsole != null && GameManager.Instance.GameState == EGameState.Hosting)
             {
-                Interface.Oxide.ServerConsole.Title = () => $"{GameManager.Instance.GetPlayerCount()} | {GameManager.Instance.ServerConfig.GameName}";
+                Interface.uMod.ServerConsole.Title = () => $"{GameManager.Instance.GetPlayerCount()} | {GameManager.Instance.ServerConfig.GameName}";
 
-                Interface.Oxide.ServerConsole.Status1Left = () => GameManager.Instance.ServerConfig.GameName;
-                Interface.Oxide.ServerConsole.Status1Right = () =>
+                Interface.uMod.ServerConsole.Status1Left = () => GameManager.Instance.ServerConfig.GameName;
+                Interface.uMod.ServerConsole.Status1Right = () =>
                 {
                     TimeSpan time = TimeSpan.FromSeconds(Time.realtimeSinceStartup);
                     string uptime = $"{time.TotalHours:00}h{time.Minutes:00}m{time.Seconds:00}s".TrimStart(' ', 'd', 'h', 'm', 's', '0');
                     return $"{Mathf.RoundToInt(1f / Time.smoothDeltaTime)}fps, {uptime}";
                 };
 
-                Interface.Oxide.ServerConsole.Status2Left = () => $"{GameManager.Instance.GetPlayerCount()}/{GameManager.Instance.ServerConfig.MaxPlayers} players";
-                Interface.Oxide.ServerConsole.Status2Right = () =>
+                Interface.uMod.ServerConsole.Status2Left = () => $"{GameManager.Instance.GetPlayerCount()}/{GameManager.Instance.ServerConfig.MaxPlayers} players";
+                Interface.uMod.ServerConsole.Status2Right = () =>
                 {
                     if (!(NetworkTime.serverTime <= 0))
                     {
@@ -182,7 +182,7 @@ namespace uMod.Hurtworld
                     return "not connected";
                 };
 
-                Interface.Oxide.ServerConsole.Status3Left = () =>
+                Interface.uMod.ServerConsole.Status3Left = () =>
                 {
                     if (TimeManager.Instance != null && GameManager.Instance != null)
                     {
@@ -193,8 +193,8 @@ namespace uMod.Hurtworld
 
                     return string.Empty;
                 };
-                Interface.Oxide.ServerConsole.Status3Right = () => $"uMod.Hurtworld {AssemblyVersion}";
-                Interface.Oxide.ServerConsole.Status3RightColor = ConsoleColor.Yellow;
+                Interface.uMod.ServerConsole.Status3Right = () => $"uMod.Hurtworld {AssemblyVersion}";
+                Interface.uMod.ServerConsole.Status3RightColor = ConsoleColor.Yellow;
             }
         }
 

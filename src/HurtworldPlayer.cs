@@ -1,4 +1,4 @@
-﻿using Steamworks;
+using Steamworks;
 using System;
 using System.Globalization;
 using uMod.Libraries;
@@ -278,7 +278,7 @@ namespace uMod.Hurtworld
             SteamGameServer.BUpdateUserData(session.SteamId, name, 0);
 
             // Overhead name // TODO: Implement when possible
-            //var displayProxyName = session.WorldPlayerEntity.GetComponent<DisplayProxyName>();
+            //string displayProxyName = session.WorldPlayerEntity.GetComponent<DisplayProxyName>();
             //displayProxyName.UpdateName(name);
 
             session.IPlayer.Name = name;
@@ -353,6 +353,8 @@ namespace uMod.Hurtworld
         /// <param name="args"></param>
         public void Message(string message, string prefix, params object[] args)
         {
+            // TODO: Steam ID handling for avatar, for universal compatibility
+
             if (!string.IsNullOrEmpty(message))
             {
                 message = args.Length > 0 ? string.Format(Formatter.ToUnity(message), args) : Formatter.ToUnity(message);
