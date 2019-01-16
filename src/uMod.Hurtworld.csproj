@@ -18,7 +18,6 @@
     <ManagedDir>Hurtworld_Data\Managed</ManagedDir>
     <SteamAppId>405100</SteamAppId>
     <SteamBranch>public</SteamBranch>
-    <SteamDepot>405101</SteamDepot>
     <SteamLogin>anonymous</SteamLogin>
     <!--
       Workaround for targeting net35 with dotnet CLI
@@ -70,7 +69,7 @@
   </Target>
   <Target Name="BeforeBuild">
     <!-- Currently only works on Windows due to Windows-only tools used -->
-    <Exec Command="powershell -ExecutionPolicy Bypass &quot;$(SolutionDir)\Steam.ps1&quot; -project $(AssemblyName) -dotnet $(TargetFramework) -appid $(SteamAppId) -branch $(SteamBranch) -depot $(SteamDepot) -managed '$(ManagedDir)'" />
+    <Exec Command="powershell -ExecutionPolicy Bypass &quot;$(SolutionDir)\Steam.ps1&quot; -project $(AssemblyName) -dotnet $(TargetFramework) -appid $(SteamAppId) -branch $(SteamBranch) -managed '$(ManagedDir)'" />
   </Target>
   <Target Name="ChangeAliasesOfStrongNameAssemblies" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
     <ItemGroup>

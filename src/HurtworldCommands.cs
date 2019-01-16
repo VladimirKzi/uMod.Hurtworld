@@ -13,8 +13,8 @@ namespace uMod.Hurtworld
     {
         #region Initialization
 
-        // The covalence provider
-        private readonly HurtworldProvider hurtworldUniversal = HurtworldProvider.Instance;
+        // The universal provider
+        private readonly HurtworldProvider universal = HurtworldProvider.Instance;
 
         // The command library
         private readonly Command cmdlib = Interface.uMod.GetLibrary<Command>();

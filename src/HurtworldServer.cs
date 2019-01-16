@@ -220,11 +220,7 @@ namespace uMod.Hurtworld
                 ulong avatarId = args.Length > 0 && args[0].IsSteamId() ? (ulong)args[0] : 0ul;
                 message = args.Length > 0 ? string.Format(Formatter.ToUnity(message), avatarId != 0ul ? args.Skip(1) : args) : Formatter.ToUnity(message);
                 string formatted = prefix != null ? $"{prefix}: {message}" : message;
-#if ITEMV2
                 ChatManager.SendChatMessage(new ServerChatMessage(formatted));
-#else
-                ChatManager.RPC("RelayChat", uLink.RPCMode.Others, formatted);
-#endif
                 ConsoleManager.SendLog($"[Chat] {message}");
             }
         }

@@ -43,11 +43,7 @@ namespace uMod.Hurtworld
         /// <summary>
         /// Gets the branch of this extension
         /// </summary>
-#if ITEMV2
-        public override string Branch => "itemv2"; // TODO: Handle this programmatically
-#else
         public override string Branch => "public";
-#endif
 
         // Commands that a plugin can't override
         internal static IEnumerable<string> RestrictedCommands => new[]
@@ -105,6 +101,7 @@ namespace uMod.Hurtworld
             "Setting view NetworkView",
             "Setting view uLinkNetworkView",
             "Source was empty",
+            "Spawners full, skipping",
             "Syncing tree deltas",
             "System.TypeInitializationException: An exception was thrown by the type initializer for Mono.CSharp.CSharpCodeCompiler",
             "The image effect DefaultCamera",
@@ -142,7 +139,7 @@ namespace uMod.Hurtworld
         public override void OnModLoad()
         {
             Interface.uMod.EnableConsole();
-            Application.logMessageReceivedThreaded += HandleLog;
+            Application.logMessageReceived += HandleLog;
             CSharpPluginLoader.PluginReferences.UnionWith(DefaultReferences);
         }
 

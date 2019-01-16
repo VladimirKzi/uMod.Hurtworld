@@ -1,6 +1,7 @@
 using Steamworks;
 using System;
 using System.Globalization;
+using System.Linq;
 using uMod.Libraries;
 using uMod.Libraries.Universal;
 using UnityEngine;
@@ -73,11 +74,7 @@ namespace uMod.Hurtworld
         {
             get
             {
-#if ITEMV2
                 return CultureInfo.GetCultureInfo(session.WorldPlayerEntity.PlayerOptions.CurrentConfig.CurrentLanguage);
-#else
-                return CultureInfo.GetCultureInfo("en");
-#endif
             }
         }
 
@@ -153,11 +150,7 @@ namespace uMod.Hurtworld
         /// <param name="amount"></param>
         public void Heal(float amount)
         {
-#if ITEMV2
             EntityEffectFluid effect = new EntityEffectFluid(EntityFluidEffectKeyDatabase.Instance.Health, EEntityEffectFluidModifierType.AddValuePure, amount);
-#else
-            EntityEffectFluid effect = new EntityEffectFluid(EEntityFluidEffectType.Health, EEntityEffectFluidModifierType.AddValuePure, amount);
-#endif
             EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
             effect.Apply(stats);
         }
@@ -170,21 +163,12 @@ namespace uMod.Hurtworld
             get
             {
                 EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
-#if ITEMV2
                 return stats.GetFluidEffect(EntityFluidEffectKeyDatabase.Instance.Health).GetValue();
-#else
-                return stats.GetFluidEffect(EEntityFluidEffectType.Health).GetValue();
-#endif
             }
             set
             {
                 EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
-#if ITEMV2
                 StandardEntityFluidEffect effect = stats.GetFluidEffect(EntityFluidEffectKeyDatabase.Instance.Health) as StandardEntityFluidEffect;
-#else
-                StandardEntityFluidEffect effect = stats.GetFluidEffect(EEntityFluidEffectType.Health) as StandardEntityFluidEffect;
-                effect?.SetValue(value);
-#endif
             }
         }
 
@@ -194,11 +178,7 @@ namespace uMod.Hurtworld
         /// <param name="amount"></param>
         public void Hurt(float amount)
         {
-#if ITEMV2
             EntityEffectFluid effect = new EntityEffectFluid(EntityFluidEffectKeyDatabase.Instance.Damage, EEntityEffectFluidModifierType.AddValuePure, -amount);
-#else
-            EntityEffectFluid effect = new EntityEffectFluid(EEntityFluidEffectType.Damage, EEntityEffectFluidModifierType.AddValuePure, -amount);
-#endif
             EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
             effect.Apply(stats);
         }
@@ -219,11 +199,7 @@ namespace uMod.Hurtworld
         {
             EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
             EntityEffectSourceData entityEffectSourceDatum = new EntityEffectSourceData { SourceDescriptionKey = "EntityStats/Sources/Suicide" };
-#if ITEMV2
             stats.HandleEvent(new EntityEventDataRaiseEvent { EventType = EEntityEventType.Die }, entityEffectSourceDatum);
-#else
-            stats.HandleEvent(new EntityEventData { EventType = EEntityEventType.Die }, entityEffectSourceDatum);
-#endif
         }
 
         /// <summary>
@@ -234,25 +210,16 @@ namespace uMod.Hurtworld
             get
             {
                 EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
-#if ITEMV2
                 return stats.GetFluidEffect(EntityFluidEffectKeyDatabase.Instance.Health).GetMaxValue();
-#else
-                return stats.GetFluidEffect(EEntityFluidEffectType.Health).GetMaxValue();
-#endif
             }
             set
             {
                 EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
-#if ITEMV2
                 StandardEntityFluidEffect effect = stats.GetFluidEffect(EntityFluidEffectKeyDatabase.Instance.Health) as StandardEntityFluidEffect;
                 if (effect != null)
                 {
                     effect.MaxValue = value;
                 }
-#else
-                StandardEntityFluidEffect effect = stats.GetFluidEffect(EEntityFluidEffectType.Health) as StandardEntityFluidEffect;
-                effect?.MaxValue(value);
-#endif
             }
         }
 
@@ -270,9 +237,6 @@ namespace uMod.Hurtworld
             }
 
             // Chat/display name
-#if !ITEMV2
-            session.Name = name;
-#endif
             session.Identity.Name = name;
             session.WorldPlayerEntity.GetComponent<HurtMonoBehavior>().RPC("UpdateName", uLink.RPCMode.All, name);
             SteamGameServer.BUpdateUserData(session.SteamId, name, 0);
@@ -353,17 +317,12 @@ namespace uMod.Hurtworld
         /// <param name="args"></param>
         public void Message(string message, string prefix, params object[] args)
         {
-            // TODO: Steam ID handling for avatar, for universal compatibility
-
+            ulong avatarId = args.Length > 0 && args[0].IsSteamId() ? (ulong)args[0] : 0ul;
             if (!string.IsNullOrEmpty(message))
             {
-                message = args.Length > 0 ? string.Format(Formatter.ToUnity(message), args) : Formatter.ToUnity(message);
+                message = args.Length > 0 ? string.Format(Formatter.ToUnity(message), avatarId != 0ul ? args.Skip(1) : args) : Formatter.ToUnity(message);
                 string formatted = prefix != null ? $"{prefix} {message}" : message;
-#if ITEMV2
                 ChatManagerServer.Instance.SendChatMessage(new ServerChatMessage(formatted, false), session.Player);
-#else
-                ChatManagerServer.Instance.RPC("RelayChat", session.Player, formatted);
-#endif
             }
         }
 

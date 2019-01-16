@@ -13,8 +13,6 @@ namespace uMod.Hurtworld
     {
         #region Player Hooks
 
-#if ITEMV2
-
         /// <summary>
         /// Called when the player is attempting to craft
         /// </summary>
@@ -28,8 +26,6 @@ namespace uMod.Hurtworld
             return Interface.CallHook("CanCraft", session, recipe);
         }
 
-#endif
-
         /// <summary>
         /// Called when the player is attempting to connect
         /// </summary>
@@ -39,9 +35,6 @@ namespace uMod.Hurtworld
         private object IOnPlayerApprove(PlayerSession session)
         {
             session.Identity.Name = session.Identity.Name ?? "Unnamed";
-#if !ITEMV2
-            session.Name = session.Identity.Name;
-#endif
             string id = session.SteamId.ToString();
             string ip = session.Player.ipAddress;
 
@@ -73,8 +66,6 @@ namespace uMod.Hurtworld
             object approvedUniversal = Interface.CallHook("OnPlayerApproved", session.Identity.Name, id, ip);
             return approvedSpecific ?? approvedUniversal;
         }
-
-#if ITEMV2
 
         /// <summary>
         /// Called when the player sends a chat message
@@ -122,81 +113,13 @@ namespace uMod.Hurtworld
             return true;
         }
 
-#else
-
-        /// <summary>
-        /// Called when the player sends a message
-        /// </summary>
-        /// <param name="session"></param>
-        /// <param name="message"></param>
-        [HookMethod("IOnPlayerChat")]
-        private object IOnPlayerChat(PlayerSession session, string message)
-        {
-            if (message.Trim().Length <= 1)
-            {
-                return true;
-            }
-
-            string str = message.Substring(0, 1);
-
-            // Is it a chat command?
-            if (!str.Equals("/"))
-            {
-                object chatSpecific = Interface.CallHook("OnPlayerChat", session, message);
-                object chatUniversal = Interface.CallHook("OnPlayerChat", session.IPlayer, message);
-                return chatSpecific ?? chatUniversal;
-            }
-
-            // Is this a covalence command?
-            if (Universal.CommandSystem.HandleChatMessage(session.IPlayer, message))
-            {
-                return true;
-            }
-
-            // Get the command string
-            string command = message.Substring(1);
-
-            // Parse it
-            string cmd;
-            string[] args;
-            ParseCommand(command, out cmd, out args);
-            if (cmd == null)
-            {
-                return null;
-            }
-
-            // Handle it
-            /*if (!cmdlib.HandleChatCommand(session, cmd, args))
-            {
-                session.IPlayer.Reply(string.Format(lang.GetMessage("UnknownCommand", this, session.SteamId.ToString()), cmd));
-                return true;
-            }*/
-
-            // Call the game hook
-            Interface.CallHook("OnChatCommand", session, command);
-
-            return true;
-        }
-
-#endif
-
         /// <summary>
         /// Called when the player has connected
         /// </summary>
-#if ITEMV2
-
         /// <param name="session"></param>
         [HookMethod("OnPlayerConnected")]
         private void OnPlayerConnected(PlayerSession session)
         {
-#else
-
-        /// <param name="name"></param>
-        [HookMethod("IOnPlayerConnected")]
-        private void IOnPlayerConnected(string name)
-        {
-            PlayerSession session = Find(name);
-#endif
             if (session == null)
             {
                 return;
@@ -218,12 +141,7 @@ namespace uMod.Hurtworld
                 }
             }
 
-#if !ITEMV2
-            // Call game-specific hook
-            Interface.CallHook("OnPlayerConnected", session);
-#endif
-
-            // Let covalence know
+            // Let universal know
             Universal.PlayerManager.PlayerConnected(session);
             IPlayer iplayer = Universal.PlayerManager.FindPlayerById(session.SteamId.ToString());
             if (iplayer != null)
@@ -245,7 +163,7 @@ namespace uMod.Hurtworld
                 // Call game-specific hook
                 Interface.CallHook("OnPlayerDisconnected", session);
 
-                // Let covalence know
+                // Let universal know
                 Interface.CallHook("OnPlayerDisconnected", session.IPlayer, "Unknown");
                 Universal.PlayerManager.PlayerDisconnected(session);
             }
@@ -313,11 +231,7 @@ namespace uMod.Hurtworld
                 return;
             }
 
-#if ITEMV2
             HNetworkView networkView = target.networkView;
-#else
-            uLink.NetworkView networkView = target.uLinkNetworkView();
-#endif
             if (networkView != null)
             {
                 PlayerSession session = GameManager.Instance.GetSession(networkView.owner);

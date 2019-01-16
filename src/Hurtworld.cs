@@ -839,7 +839,7 @@ namespace uMod.Hurtworld
             {
                 /*player.Reply($"Protocol: {Server.Protocol}\nBuild Date: {BuildInfo.Current.BuildDate}\n" +
                 $"Unity Version: {UnityEngine.Application.unityVersion}\nChangeset: {BuildInfo.Current.Scm.ChangeId}\n" +
-                $"Branch: {BuildInfo.Current.Scm.Branch}\nOxide Version: {OxideMod.Version}");*/ // TODO: Implement server version
+                $"Branch: {BuildInfo.Current.Scm.Branch}\nOxide Version: {uMod.Version}");*/ // TODO: Implement server version
             }
             else
             {
@@ -890,7 +890,7 @@ namespace uMod.Hurtworld
                 return true;
             }
 
-            // Is this a covalence command?
+            // Is this a universal command?
             if (Universal.CommandSystem.HandleConsoleMessage(Universal.CommandSystem.consolePlayer, arg))
             {
                 return true;
