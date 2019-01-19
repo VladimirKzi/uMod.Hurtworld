@@ -84,6 +84,7 @@ namespace uMod.Hurtworld
             "Deauthorizing player for region",
             "Degenerate triangles might have been generated.",
             "Failed to find hitbox in mappings",
+            "Failed to get pixels of splat texture",
             "Finished writing containers for save, waiting on save thread",
             "Fire went out due to wind",
             "Got validate auth ticket repsonse k_EAuthSessionResponseOK",
@@ -105,6 +106,7 @@ namespace uMod.Hurtworld
             "Syncing tree deltas",
             "System.TypeInitializationException: An exception was thrown by the type initializer for Mono.CSharp.CSharpCodeCompiler",
             "The image effect DefaultCamera",
+            "The referenced script on this Behaviour",
             "Usually this is not a problem,",
             "Writing to disk completed from background thread"
         };
