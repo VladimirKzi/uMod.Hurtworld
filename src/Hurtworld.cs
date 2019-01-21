@@ -136,7 +136,7 @@ namespace uMod.Hurtworld
                 Analytics.Collect();
 
                 HurtworldExtension.ConsoleStatusBar();
-                SteamGameServer.SetGameTags("oxide,modded");
+                SteamGameServer.SetGameTags("umod,modded");
             }
         }
 
@@ -835,17 +835,8 @@ namespace uMod.Hurtworld
         [HookMethod("VersionCommand")]
         private void VersionCommand(IPlayer player, string command, string[] args)
         {
-            if (player.IsServer)
-            {
-                /*player.Reply($"Protocol: {Server.Protocol}\nBuild Date: {BuildInfo.Current.BuildDate}\n" +
-                $"Unity Version: {UnityEngine.Application.unityVersion}\nChangeset: {BuildInfo.Current.Scm.ChangeId}\n" +
-                $"Branch: {BuildInfo.Current.Scm.Branch}\nOxide Version: {uMod.Version}");*/ // TODO: Implement server version
-            }
-            else
-            {
-                string format = Universal.FormatText(lang.GetMessage("Version", this, player.Id));
-                player.Reply(string.Format(format, uMod.Version, Universal.GameName, Server.Version, Server.Protocol));
-            }
+            string format = Universal.FormatText(lang.GetMessage("Version", this, player.Id));
+            player.Reply(string.Format(format, uMod.Version, Universal.GameName, Server.Version, Server.Protocol));
         }
 
         #endregion Version Command

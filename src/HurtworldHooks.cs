@@ -1,3 +1,4 @@
+using System;
 using uMod.Configuration;
 using uMod.Libraries.Universal;
 using uMod.Plugins;
@@ -20,7 +21,7 @@ namespace uMod.Hurtworld
         /// <param name="recipe"></param>
         /// <returns></returns>
         [HookMethod("ICanCraft")]
-        private object ICanCraft(uLink.NetworkPlayer player, ICraftable recipe)
+        private object ICanCraft(NetworkPlayer player, ICraftable recipe)
         {
             PlayerSession session = Hurtworld.Find(player);
             return Interface.CallHook("CanCraft", session, recipe);
@@ -41,18 +42,17 @@ namespace uMod.Hurtworld
             Universal.PlayerManager.PlayerJoin(session);
 
             object loginSpecific = Interface.CallHook("CanClientLogin", session);
-            object loginUniversal = Interface.CallHook("CanUserLogin", session.Identity.Name, id, ip);
-            object canLogin = loginSpecific ?? loginUniversal;
+            object loginUniversal = Interface.CallHook("CanPlayerLogin", session.Identity.Name, id, ip);
+            object loginDeprecated = Interface.CallDeprecatedHook("CanUserLogin", "CanPlayerLogin", new DateTime(2018, 07, 01), session.Identity.Name, id, ip);
+            object canLogin = loginSpecific ?? loginUniversal ?? loginDeprecated;
 
             if (canLogin is string || canLogin is bool && !(bool)canLogin)
             {
                 GameManager.Instance.StartCoroutine(GameManager.Instance.DisconnectPlayerSync(session.Player, canLogin is string ? canLogin.ToString() : "Connection was rejected")); // TODO: Localization
-                Interface.uMod.LogWarning($"_playerSessions contains {session.Player}? " + GameManager.Instance._playerSessions.ContainsKey(session.Player).ToString());
                 if (GameManager.Instance._playerSessions.ContainsKey(session.Player))
                 {
                     GameManager.Instance._playerSessions.Remove(session.Player);
                 }
-                Interface.uMod.LogWarning($"_steamIdSession contains {session.SteamId}? " + GameManager.Instance._steamIdSession.ContainsKey(session.SteamId).ToString());
                 if (GameManager.Instance._steamIdSession.ContainsKey(session.SteamId))
                 {
                     GameManager.Instance._steamIdSession.Remove(session.SteamId);
@@ -64,7 +64,8 @@ namespace uMod.Hurtworld
 
             object approvedSpecific = Interface.CallHook("OnPlayerApprove", session);
             object approvedUniversal = Interface.CallHook("OnPlayerApproved", session.Identity.Name, id, ip);
-            return approvedSpecific ?? approvedUniversal;
+            object approvedDeprecated = Interface.CallDeprecatedHook("OnUserApproved", "OnPlayerApproved", new DateTime(2018, 07, 01), session.Identity.Name, id, ip);
+            return approvedSpecific ?? approvedUniversal ?? approvedDeprecated;
         }
 
         /// <summary>
@@ -78,7 +79,8 @@ namespace uMod.Hurtworld
         {
             object chatSpecific = Interface.CallHook("OnPlayerChat", session, message);
             object chatUniversal = Interface.CallHook("OnPlayerChat", session.IPlayer, message);
-            return chatSpecific ?? chatUniversal;
+            object chatDeprecated = Interface.CallDeprecatedHook("OnUserChat", "OnPlayerChat", new DateTime(2018, 07, 01), session.IPlayer, message);
+            return chatSpecific ?? chatUniversal ?? chatDeprecated;
         }
 
         /// <summary>
@@ -99,16 +101,22 @@ namespace uMod.Hurtworld
             if (cmd == null) return null;
 
             // Is the command blocked?
-            object blockedSpecific = Interface.CallHook("OnPlayerCommand", session, cmd, args); // TODO: Deprecate OnChatCommand
+            object blockedSpecific = Interface.CallHook("OnPlayerCommand", session, cmd, args);
             object blockedUniversal = Interface.CallHook("OnPlayerCommand", session.IPlayer, cmd, args);
-            if (blockedSpecific != null || blockedUniversal != null) return true;
+            object blockDeprecated = Interface.CallDeprecatedHook("OnUserCommand", "OnPlayerCommand", new DateTime(2018, 07, 01), session.IPlayer, cmd, args);
+            if (blockedSpecific != null || blockedUniversal != null || blockDeprecated != null) return true;
 
-            // Is it a covalance command?
-            if (Universal.CommandSystem.HandleChatMessage(session.IPlayer, command)) return true;
+            // Is it a universal command?
+            if (Universal.CommandSystem.HandleChatMessage(session.IPlayer, command))
+            {
+                return true;
+            }
 
             // Is it a regular chat command?
             //if (!cmdlib.HandleChatCommand(session, cmd, args))
+            //{
             //    session.IPlayer.Reply(string.Format(lang.GetMessage("UnknownCommand", this, session.IPlayer.Id), cmd));
+            //}
 
             return true;
         }
@@ -120,34 +128,34 @@ namespace uMod.Hurtworld
         [HookMethod("OnPlayerConnected")]
         private void OnPlayerConnected(PlayerSession session)
         {
-            if (session == null)
+            if (session != null)
             {
-                return;
-            }
-
-            // Update player's permissions group and name
-            if (permission.IsLoaded)
-            {
-                string id = session.SteamId.ToString();
-                permission.UpdateNickname(id, session.Identity.Name);
-                uModConfig.DefaultGroups defaultGroups = Interface.uMod.Config.Options.DefaultGroups;
-                if (!permission.UserHasGroup(id, defaultGroups.Players))
+                // Update player's permissions group and name
+                if (permission.IsLoaded)
                 {
-                    permission.AddUserGroup(id, defaultGroups.Players);
-                }
-                if (session.IsAdmin && !permission.UserHasGroup(id, defaultGroups.Administrators))
-                {
-                    permission.AddUserGroup(id, defaultGroups.Administrators);
-                }
-            }
+                    string id = session.SteamId.ToString();
+                    permission.UpdateNickname(id, session.Identity.Name);
+                    uModConfig.DefaultGroups defaultGroups = Interface.uMod.Config.Options.DefaultGroups;
+                    if (!permission.UserHasGroup(id, defaultGroups.Players))
+                    {
+                        permission.AddUserGroup(id, defaultGroups.Players);
+                    }
 
-            // Let universal know
-            Universal.PlayerManager.PlayerConnected(session);
-            IPlayer iplayer = Universal.PlayerManager.FindPlayerById(session.SteamId.ToString());
-            if (iplayer != null)
-            {
-                session.IPlayer = iplayer;
-                Interface.CallHook("OnPlayerConnected", session.IPlayer);
+                    if (session.IsAdmin && !permission.UserHasGroup(id, defaultGroups.Administrators))
+                    {
+                        permission.AddUserGroup(id, defaultGroups.Administrators);
+                    }
+                }
+
+                // Let universal know
+                Universal.PlayerManager.PlayerConnected(session);
+                IPlayer player = Universal.PlayerManager.FindPlayerById(session.SteamId.ToString());
+                if (player != null)
+                {
+                    session.IPlayer = player;
+                    Interface.CallHook("OnPlayerConnected", session.IPlayer);
+                    Interface.CallDeprecatedHook("OnUserConnected", "OnPlayerConnected", new DateTime(2018, 07, 01), session.IPlayer);
+                }
             }
         }
 
@@ -165,6 +173,7 @@ namespace uMod.Hurtworld
 
                 // Let universal know
                 Interface.CallHook("OnPlayerDisconnected", session.IPlayer, "Unknown");
+                Interface.CallDeprecatedHook("OnUserDisconnected", "OnPlayerDisconnected", new DateTime(2018, 07, 01), session.IPlayer, "Unknown");
                 Universal.PlayerManager.PlayerDisconnected(session);
             }
         }

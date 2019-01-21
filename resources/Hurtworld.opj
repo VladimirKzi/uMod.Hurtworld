@@ -2154,14 +2154,14 @@
             "HookName": "IOnServerInitialized",
             "AssemblyName": "Assembly-CSharp.dll",
             "TypeName": "SteamworksManagerClient",
-            "Flagged": false,
+            "Flagged": true,
             "Signature": {
               "Exposure": 2,
               "Name": "InitializeServer",
               "ReturnType": "System.Boolean",
               "Parameters": []
             },
-            "MSILHash": "GsNS0FqdrW8Ts6SEjKMs4XM8HsE+r3vh1aK7ImvGkKI=",
+            "MSILHash": "IMMBE7dZL2CdfjsgKxh5hLi3bAQZLFrzcT5em7HqijE=",
             "BaseHookName": null,
             "HookCategory": null
           }
@@ -2344,6 +2344,25 @@
             ]
           },
           "MSILHash": "g9v5OSC63qyLe3/rDooFrUuIF6wnGDXicFTf3axo01w="
+        },
+        {
+          "Name": "OwnershipStakeServer::InvalidateServer",
+          "AssemblyName": "Assembly-CSharp.dll",
+          "TypeName": "OwnershipStakeServer",
+          "Type": 1,
+          "TargetExposure": [
+            2
+          ],
+          "Flagged": false,
+          "Signature": {
+            "Exposure": [
+              0
+            ],
+            "Name": "InvalidateServer",
+            "FullTypeName": "System.Void",
+            "Parameters": []
+          },
+          "MSILHash": "PaG7wNUP13NwJTeRdpT7Malp7reIq3UgnbvHAqX8+XE="
         }
       ],
       "Fields": [

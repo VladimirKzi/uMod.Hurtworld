@@ -43,9 +43,11 @@ namespace uMod.Hurtworld
         /// <summary>
         /// Gets the branch of this extension
         /// </summary>
-        public override string Branch => "public";
+        public override string Branch => "public"; // TODO: Handle this programmatically
 
-        // Commands that a plugin can't override
+        /// <summary>
+        /// Commands that plugins can't override
+        /// </summary>
         internal static IEnumerable<string> RestrictedCommands => new[]
         {
             "bindip", "host", "queryport"
