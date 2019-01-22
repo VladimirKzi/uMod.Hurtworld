@@ -132,7 +132,7 @@ namespace uMod.Hurtworld
                 serverInitialized = true;
                 Interface.CallHook("OnServerInitialized", serverInitialized);
 
-                Interface.uMod.LogInfo($"uMod version {uMod.Version} running on {Universal.GameName} server version {Server.Version}");
+                Interface.uMod.LogInfo($"uMod version {uMod.Version} running on {Universal.GameName.Humanize()} server version {Server.Version}");
                 Analytics.Collect();
 
                 HurtworldExtension.ConsoleStatusBar();
@@ -146,11 +146,11 @@ namespace uMod.Hurtworld
         [HookMethod("OnServerSave")]
         private void OnServerSave()
         {
-            // Trigger save process
-            Interface.uMod.OnSave();
-
             // Save groups, users, and other data
             Universal.PlayerManager.SavePlayerData();
+
+            // Trigger save process
+            Interface.uMod.OnSave();
         }
 
         /// <summary>
@@ -159,11 +159,11 @@ namespace uMod.Hurtworld
         [HookMethod("OnServerShutdown")]
         private void OnServerShutdown()
         {
-            // Trigger shutdown process
-            Interface.uMod.OnShutdown();
-
             // Save groups, users, and other data
             Universal.PlayerManager.SavePlayerData();
+
+            // Trigger shutdown process
+            Interface.uMod.OnShutdown();
         }
 
         #endregion Core Hooks
@@ -836,7 +836,7 @@ namespace uMod.Hurtworld
         private void VersionCommand(IPlayer player, string command, string[] args)
         {
             string format = Universal.FormatText(lang.GetMessage("Version", this, player.Id));
-            player.Reply(string.Format(format, uMod.Version, Universal.GameName, Server.Version, Server.Protocol));
+            player.Reply(string.Format(format, uMod.Version, Universal.GameName.Humanize(), Server.Version, Server.Protocol));
         }
 
         #endregion Version Command
