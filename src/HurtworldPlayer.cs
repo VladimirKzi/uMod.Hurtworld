@@ -74,7 +74,7 @@ namespace uMod.Hurtworld
         {
             get
             {
-                return CultureInfo.GetCultureInfo(session.WorldPlayerEntity.PlayerOptions.CurrentConfig.CurrentLanguage ?? "en");
+                return CultureInfo.GetCultureInfo(session.WorldPlayerEntity.PlayerOptions.CurrentConfig.CurrentLanguage);
             }
         }
 
