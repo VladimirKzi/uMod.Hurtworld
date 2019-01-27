@@ -227,15 +227,15 @@ namespace uMod.Hurtworld
         #region Entity Hooks
 
         /// <summary>
-        /// Called when an entity takes damage
+        /// Called when an entity effect is applied
         /// </summary>
-        /// <param name="effect"></param>
         /// <param name="target"></param>
+        /// <param name="effect"></param>
         /// <param name="source"></param>
-        [HookMethod("IOnTakeDamage")]
-        private void IOnTakeDamage(EntityEffectFluid effect, EntityStats target, EntityEffectSourceData source)
+        [HookMethod("IOnEntityEffect")]
+        private void IOnEntityEffect(EntityStats target, IEntityFluidEffect effect, EntityEffectSourceData source)
         {
-            if (effect == null || target == null || source == null || source.Value.Equals(0f))
+            if (source == null || effect.ResolveTargetType() != EntityFluidEffectKeyDatabase.Instance?.Health)
             {
                 return;
             }
@@ -243,7 +243,14 @@ namespace uMod.Hurtworld
             AIEntity entity = target.GetComponent<AIEntity>();
             if (entity != null)
             {
-                Interface.CallHook("OnEntityTakeDamage", entity, source);
+                if (source.Value >= 0)
+                {
+                    Interface.CallHook("OnEntityTakeDamage", entity, source);
+                }
+                else
+                {
+                    Interface.CallHook("OnEntityHeal", entity, source);
+                }
                 return;
             }
 
@@ -253,7 +260,14 @@ namespace uMod.Hurtworld
                 PlayerSession session = GameManager.Instance.GetSession(networkView.owner);
                 if (session != null)
                 {
-                    Interface.CallHook("OnPlayerTakeDamage", session, source);
+                    if (source.Value >= 0)
+                    {
+                        Interface.CallHook("OnPlayerTakeDamage", session, source);
+                    }
+                    else
+                    {
+                        Interface.CallHook("OnPlayerHeal", session, source);
+                    }
                 }
             }
         }
