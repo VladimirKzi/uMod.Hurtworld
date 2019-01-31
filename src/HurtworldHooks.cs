@@ -17,13 +17,13 @@ namespace uMod.Hurtworld
         /// <summary>
         /// Called when the player is attempting to craft
         /// </summary>
-        /// <param name="player"></param>
+        /// <param name="netPlayer"></param>
         /// <param name="recipe"></param>
         /// <returns></returns>
         [HookMethod("ICanCraft")]
-        private object ICanCraft(NetworkPlayer player, ICraftable recipe)
+        private object ICanCraft(NetworkPlayer netPlayer, ICraftable recipe)
         {
-            PlayerSession session = Hurtworld.Find(player);
+            PlayerSession session = Find(netPlayer);
             return Interface.CallHook("CanCraft", session, recipe);
         }
 
@@ -81,6 +81,32 @@ namespace uMod.Hurtworld
             object chatUniversal = Interface.CallHook("OnPlayerChat", session.IPlayer, message);
             object chatDeprecated = Interface.CallDeprecatedHook("OnUserChat", "OnPlayerChat", new DateTime(2018, 07, 01), session.IPlayer, message);
             return chatSpecific ?? chatUniversal ?? chatDeprecated;
+        }
+
+        /// <summary>
+        /// Called when the player atempts to claim territory
+        /// </summary>
+        /// <param name="netPlayer"></param>
+        /// <param name="clan"></param>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        [HookMethod("IOnPlayerClaimTerritory")]
+        private object IOnPlayerClaimTerritory(NetworkPlayer netPlayer, Clan clan, int point)
+        {
+            return Interface.CallHook("OnPlayerClaimTerritory", Find(netPlayer), clan, point);
+        }
+
+        /// <summary>
+        /// Called when the player has claimed territory
+        /// </summary>
+        /// <param name="netPlayer"></param>
+        /// <param name="clan"></param>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        [HookMethod("IOnPlayerClaimedTerritory")]
+        private void IOnPlayerClaimedTerritory(NetworkPlayer netPlayer, Clan clan, int point)
+        {
+            Interface.CallHook("OnPlayerClaimedTerritory", Find(netPlayer), clan, point);
         }
 
         /// <summary>
@@ -188,12 +214,12 @@ namespace uMod.Hurtworld
         /// <summary>
         /// Called when the server receives input from the player
         /// </summary>
-        /// <param name="player"></param>
+        /// <param name="netPlayer"></param>
         /// <param name="input"></param>
         [HookMethod("IOnPlayerInput")]
-        private void IOnPlayerInput(NetworkPlayer player, InputControls input)
+        private void IOnPlayerInput(NetworkPlayer netPlayer, InputControls input)
         {
-            PlayerSession session = Find(player);
+            PlayerSession session = Find(netPlayer);
             if (session != null)
             {
                 Interface.CallHook("OnPlayerInput", session, input);
@@ -203,22 +229,22 @@ namespace uMod.Hurtworld
         /// <summary>
         /// Called when the player attempts to suicide
         /// </summary>
-        /// <param name="player"></param>
+        /// <param name="netPlayer"></param>
         [HookMethod("IOnPlayerSuicide")]
-        private object IOnPlayerSuicide(NetworkPlayer player)
+        private object IOnPlayerSuicide(NetworkPlayer netPlayer)
         {
-            PlayerSession session = Find(player);
+            PlayerSession session = Find(netPlayer);
             return session != null ? Interface.CallHook("OnPlayerSuicide", session) : null;
         }
 
         /// <summary>
         /// Called when the player attempts to suicide
         /// </summary>
-        /// <param name="player"></param>
+        /// <param name="netPlayer"></param>
         [HookMethod("IOnPlayerVoice")]
-        private object IOnPlayerVoice(NetworkPlayer player)
+        private object IOnPlayerVoice(NetworkPlayer netPlayer)
         {
-            PlayerSession session = Find(player);
+            PlayerSession session = Find(netPlayer);
             return session != null ? Interface.CallHook("OnPlayerVoice", session) : null;
         }
 
@@ -326,16 +352,14 @@ namespace uMod.Hurtworld
         [HookMethod("IOnGarageDoorUsed")]
         private void IOnGarageDoorUsed(GarageDoorServer door)
         {
-            NetworkPlayer? player = door.LastUsedBy;
-            if (player == null)
+            NetworkPlayer? netPlayer = door.LastUsedBy;
+            if (netPlayer != null)
             {
-                return;
-            }
-
-            PlayerSession session = Find((NetworkPlayer)player);
-            if (session != null)
-            {
-                Interface.CallHook("OnGarageDoorUsed", door, session);
+                PlayerSession session = Find((NetworkPlayer)netPlayer);
+                if (session != null)
+                {
+                    Interface.CallHook("OnGarageDoorUsed", door, session);
+                }
             }
         }
 
@@ -370,26 +394,26 @@ namespace uMod.Hurtworld
         /// <summary>
         /// Called when a player enters a vehicle
         /// </summary>
-        /// <param name="player"></param>
+        /// <param name="netPlayer"></param>
         /// <param name="vehicle"></param>
         /// <returns></returns>
         [HookMethod("IOnEnterVehicle")]
-        private void IOnEnterVehicle(NetworkPlayer player, VehiclePassenger vehicle)
+        private void IOnEnterVehicle(NetworkPlayer netPlayer, VehiclePassenger vehicle)
         {
-            PlayerSession session = Find(player);
+            PlayerSession session = Find(netPlayer);
             Interface.CallHook("OnEnterVehicle", session, vehicle);
         }
 
         /// <summary>
         /// Called when a player exits a vehicle
         /// </summary>
-        /// <param name="player"></param>
+        /// <param name="netPlayer"></param>
         /// <param name="vehicle"></param>
         /// <returns></returns>
         [HookMethod("IOnExitVehicle")]
-        private void IOnExitVehicle(NetworkPlayer player, VehiclePassenger vehicle)
+        private void IOnExitVehicle(NetworkPlayer netPlayer, VehiclePassenger vehicle)
         {
-            PlayerSession session = Find(player);
+            PlayerSession session = Find(netPlayer);
             Interface.CallHook("OnExitVehicle", session, vehicle);
         }
 
