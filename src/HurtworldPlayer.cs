@@ -167,8 +167,9 @@ namespace uMod.Hurtworld
             }
             set
             {
+                EntityEffectFluid effect = new EntityEffectFluid(EntityFluidEffectKeyDatabase.Instance.Health, EEntityEffectFluidModifierType.SetValuePure, value);
                 EntityStats stats = session.WorldPlayerEntity.GetComponent<EntityStats>();
-                StandardEntityFluidEffect effect = stats.GetFluidEffect(EntityFluidEffectKeyDatabase.Instance.Health) as StandardEntityFluidEffect;
+                effect.Apply(stats);
             }
         }
 
