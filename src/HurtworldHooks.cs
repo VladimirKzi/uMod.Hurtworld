@@ -174,17 +174,17 @@ namespace uMod.Hurtworld
                     }
                 }
 
-                // Set default language for player if not set
-                if (string.IsNullOrEmpty(lang.GetLanguage(id)))
-                {
-                    lang.SetLanguage(session.WorldPlayerEntity.PlayerOptions.CurrentConfig.CurrentLanguage, id);
-                }
-
                 // Let universal know
                 Universal.PlayerManager.PlayerConnected(session);
                 IPlayer player = Universal.PlayerManager.FindPlayerById(session.SteamId.ToString());
                 if (player != null)
                 {
+                    // Set default language for player if not set
+                    if (string.IsNullOrEmpty(lang.GetLanguage(id)))
+                    {
+                        lang.SetLanguage(player.Language.TwoLetterISOLanguageName, id);
+                    }
+
                     session.IPlayer = player;
                     Interface.CallHook("OnPlayerConnected", session.IPlayer);
                     Interface.CallDeprecatedHook("OnUserConnected", "OnPlayerConnected", new DateTime(2018, 07, 01), session.IPlayer);
